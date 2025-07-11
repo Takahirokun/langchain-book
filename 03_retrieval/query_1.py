@@ -1,5 +1,5 @@
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma
 
 embeddings = OpenAIEmbeddings(
     model="text-embedding-ada-002"

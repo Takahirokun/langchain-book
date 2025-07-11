@@ -7,5 +7,5 @@ async def on_chat_start():
 
 @cl.on_message #← メッセージが送信されたときに実行される関数を定義する
 async def on_message(input_message):
-    print("入力されたメッセージ: " + input_message)
+    #print("入力されたメッセージ: " + input_message)
     await cl.Message(content="こんにちは!").send() #← チャットボットからの返答を送信する

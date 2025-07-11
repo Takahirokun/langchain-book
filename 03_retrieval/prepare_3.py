@@ -1,7 +1,7 @@
-from langchain.document_loaders import PyMuPDFLoader
-from langchain.embeddings import OpenAIEmbeddings  #← OpenAIEmbeddingsをインポート
-from langchain.text_splitter import SpacyTextSplitter
-from langchain.vectorstores import Chroma  #← Chromaをインポート
+from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_openai import OpenAIEmbeddings  #← OpenAIEmbeddingsをインポート
+from langchain_text_splitters import SpacyTextSplitter
+from langchain_chroma import Chroma  #← Chromaをインポート
 
 loader = PyMuPDFLoader("./sample.pdf")
 documents = loader.load()

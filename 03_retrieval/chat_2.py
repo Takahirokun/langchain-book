@@ -1,9 +1,9 @@
 import chainlit as cl
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import PromptTemplate
-from langchain.schema import HumanMessage
-from langchain.vectorstores import Chroma
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.prompts import PromptTemplate
+from langchain_core.messages import HumanMessage
+from langchain_chroma import Chroma
 
 embeddings = OpenAIEmbeddings(
     model="text-embedding-ada-002"
@@ -30,8 +30,8 @@ async def on_chat_start():
 
 @cl.on_message
 async def on_message(input_message):
-    print("入力されたメッセージ: " + input_message)
-    documents = database.similarity_search(input_message) #← input_messageに変更
+    print("入力されたメッセージ: " + input_message.content)
+    documents = database.similarity_search(input_message.content) #← input_messageに変更
 
     documents_string = ""
 
@@ -41,8 +41,8 @@ async def on_message(input_message):
     {document.page_content}
     """
 
-    result = chat([
+    result = chat.invoke([
         HumanMessage(content=prompt.format(document=documents_string,
-                                           query=input_message)) #← input_messageに変更
+                                           query=input_message.content)) #← input_messageに変更
     ])
     await cl.Message(content=result.content).send() #← チャットボットからの返答を送信する

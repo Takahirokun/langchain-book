@@ -1,6 +1,6 @@
 from langchain.chains import RetrievalQA
-from langchain.chat_models import ChatOpenAI
-from langchain.retrievers import WikipediaRetriever
+from langchain_openai import ChatOpenAI
+from langchain_community.retrievers import WikipediaRetriever
 
 chat = ChatOpenAI()
 
@@ -16,7 +16,7 @@ chain = RetrievalQA.from_llm( #← RetrievalQAを初期化する
     return_source_documents=True, #← 情報の取得元のドキュメントを返すようにする
 )
 
-result = chain("バーボンウイスキーとは？") #← RetrievalQAを実行する
+result = chain.invoke("バーボンウイスキーとは？") #← RetrievalQAを実行する
 
 source_documents = result["source_documents"] #← 情報の取得元のドキュメントを取得する
 

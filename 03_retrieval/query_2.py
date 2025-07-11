@@ -1,8 +1,8 @@
-from langchain.chat_models import ChatOpenAI  #← ChatOpenAIをインポート
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.prompts import PromptTemplate  #← PromptTemplateをインポート
-from langchain.schema import HumanMessage  #← HumanMessageをインポート
-from langchain.vectorstores import Chroma
+from langchain_openai import ChatOpenAI  #← ChatOpenAIをインポート
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.prompts import PromptTemplate  #← PromptTemplateをインポート
+from langchain_core.messages import HumanMessage  #← HumanMessageをインポート
+from langchain_chroma import Chroma
 
 embeddings = OpenAIEmbeddings(
     model="text-embedding-ada-002"
@@ -40,7 +40,7 @@ chat = ChatOpenAI( #← ChatOpenAIを初期化
     model="gpt-3.5-turbo"
 )
 
-result = chat([
+result = chat.invoke([
     HumanMessage(content=prompt.format(document=documents_string, query=query))
 ])
 

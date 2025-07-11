@@ -1,7 +1,7 @@
 from langchain.chains import RetrievalQA  #← RetrievalQAをインポートする
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma
 
 chat = ChatOpenAI(model="gpt-3.5-turbo")
 
@@ -22,7 +22,7 @@ qa = RetrievalQA.from_llm(  #← RetrievalQAを初期化する
     return_source_documents=True  #← 返答にソースドキュメントを含めるかどうかを指定する
 )
 
-result = qa("飛行車の最高速度を教えて")
+result = qa.invoke("飛行車の最高速度を教えて")
 
 print(result["result"]) #← 返答を表示する
 
