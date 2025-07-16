@@ -1,5 +1,5 @@
-from langchain import LLMChain, PromptTemplate  #← LLMChainをインポート
-from langchain.chat_models import ChatOpenAI
+from langchain_core.prompts import PromptTemplate  
+from langchain_openai import ChatOpenAI
 
 chat = ChatOpenAI(  
     model="gpt-3.5-turbo",  
@@ -12,11 +12,9 @@ prompt = PromptTemplate(
     ]
 )
 
-chain = LLMChain( #← LLMChainを作成する
-    llm=chat,
-    prompt=prompt,
-)
+chain = prompt | chat  #← ChatOpenAIとPromptTemplateをパイプでつなぐ
 
-result = chain.predict(product="iPhone") #← LLMChainを実行する
 
-print(result)
+result = chain.invoke("iPhone8") #← Chainを実行する
+
+print(result.content)

@@ -1,6 +1,7 @@
-from langchain.chains import LLMChain, LLMRequestsChain
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import PromptTemplate
+from langchain_community.chains.llm_requests import LLMRequestsChain
+from langchain.chains import LLMChain
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
 
 chat = ChatOpenAI()
 
@@ -13,16 +14,15 @@ prompt = PromptTemplate( #← PromptTemplateを初期化
 )
 
 llm_chain = LLMChain(
-    llm=chat,
-    prompt=prompt,
-    verbose=True,
+    llm=chat,  #← LLMにはChatOpenAIを指定
+    prompt=prompt,  #← promptにはPromptTemplateを指定
 )
 
 chain = LLMRequestsChain(  #← LLMRequestsChainを初期化
     llm_chain=llm_chain,  #← llm_chainにはLLMChainを指定
 )
 
-print(chain({
+print(chain.invoke({
     "query": "東京の天気について教えて",
     "url": "https://www.jma.go.jp/bosai/forecast/data/overview_forecast/130000.json",
 }))
