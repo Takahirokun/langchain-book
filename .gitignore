@@ -1,0 +1,7 @@
+**/.data
+**/__pycache__
+**/*.pdf
+!/asset/sample.pdf
+
+**/.chainlit
+**/chainlit.md
