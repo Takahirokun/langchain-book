@@ -1,13 +1,30 @@
 import os
 import chainlit as cl
-from langchain.chains import ConversationChain
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferMemory, RedisChatMessageHistory
-from langchain.schema import HumanMessage
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_openai import ChatOpenAI
+from langchain_redis import RedisChatMessageHistory  #← RedisChatMessageHistoryをインポート
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
 chat = ChatOpenAI(
     model="gpt-3.5-turbo"
 )
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", "あなたは会話の文脈を考慮したチャットボットです。"),
+        MessagesPlaceholder(variable_name="history"),
+        ("human", "{input}"),
+    ]
+)
+
+
+def get_redis_history(session_id: str) -> BaseChatMessageHistory:
+    return RedisChatMessageHistory(session_id, redis_url=REDIS_URL)
+
 
 @cl.on_chat_start
 async def on_chat_start():
@@ -15,28 +32,27 @@ async def on_chat_start():
     while not thread_id: #← スレッドIDが入力されるまで繰り返す
         res = await cl.AskUserMessage(content="私は会話の文脈を考慮した返答ができるチャットボットです。スレッドIDを入力してください。", timeout=600).send() #← AskUserMessageを使ってスレッドIDを入力
         if res:
-            thread_id = res['content']
+            thread_id = res['output']
+            await cl.Message(
+                content=f"スレッドIDを受け取りました: {thread_id}",
+            ).send()
 
-    history = RedisChatMessageHistory(  #← 新しくチャットが始まるたびに初期化するようにon_chat_startに移動
-        session_id=thread_id,  #← スレッドIDをセッションIDとして指定
-        url=os.environ.get("REDIS_URL"),
+    print(f"Received thread_id: {thread_id}")
+    history = RedisChatMessageHistory(  #← RedisChatMessageHistoryを初期化
+        session_id=thread_id,
+        redis_url=REDIS_URL,  
     )
 
-    memory = ConversationBufferMemory( #← 新しくチャットが始まるたびに初期化するようにon_chat_startに移動
-        return_messages=True,
-        chat_memory=history,
+    chain = prompt | chat
+
+    chain_with_history = RunnableWithMessageHistory(
+        chain, get_redis_history, input_messages_key="input", history_messages_key="history"
     )
 
-    chain = ConversationChain( #← 新しくチャットが始まるたびに初期化するようにon_chat_startに移動
-        memory=memory,
-        llm=chat,
-    )
-
-    memory_message_result = chain.memory.load_memory_variables({}) #← メモリの内容を取得
-
-    messages = memory_message_result['history']
+    messages = history.messages
 
     for message in messages:
+        print(f"Processing message: {message}")
         if isinstance(message, HumanMessage): #← ユーザーからのメッセージかどうかを判定
             await cl.Message( #← ユーザーからのメッセージの場合はauthorUserを指定して送信
                 author="User",
@@ -47,12 +63,19 @@ async def on_chat_start():
                 author="ChatBot",
                 content=f"{message.content}",
             ).send()
-    cl.user_session.set("chain", chain) #← 履歴をセッションに保存
+    cl.user_session.set("session_id", thread_id) #← セッションIDをセッションに保存
+    cl.user_session.set("chain_with_history", chain_with_history) #← 履歴をセッションに保存
 
 @cl.on_message
-async def on_message(message: str):
-    chain = cl.user_session.get("chain") #← セッションから履歴を取得
+async def on_message(message: cl.Message):
+    session_id = cl.user_session.get("session_id") 
+    chain_with_history = cl.user_session.get("chain_with_history") 
 
-    result = chain(message)
+    message_content = message.content
 
-    await cl.Message(content=result["response"]).send()
+    result = chain_with_history.invoke(
+        {"input": message_content},
+        config={"configurable": {"session_id": session_id}},
+    )
+
+    await cl.Message(content=result.content).send() 
