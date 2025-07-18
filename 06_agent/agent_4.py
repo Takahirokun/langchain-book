@@ -1,19 +1,18 @@
-from langchain.agents import AgentType, Tool, initialize_agent
-from langchain.agents.agent_toolkits import create_retriever_tool  #← create_retriever_toolをインポート
-from langchain.chat_models import ChatOpenAI
-from langchain.retrievers import WikipediaRetriever #←WikipediaRetrieverをインポート
-from langchain.tools import WriteFileTool
+from langchain_core.tools.retriever import create_retriever_tool  #← create_retriever_toolをインポート
+from langchain_openai import ChatOpenAI
+from langchain_community.retrievers import WikipediaRetriever #←WikipediaRetrieverをインポート
+from langchain_community.agent_toolkits import FileManagementToolkit
+from langgraph.prebuilt import create_react_agent
 
 chat = ChatOpenAI(
     temperature=0,
     model="gpt-3.5-turbo"
 )
 
-tools = [] 
-
-tools.append(WriteFileTool( 
-    root_dir="./"
-))
+tools = FileManagementToolkit(
+    root_dir=str("./work"),
+    selected_tools=["write_file", "read_file", "list_directory"],  #←ファイル管理ツールを選択
+).get_tools()  #←ファイル管理ツールを取得
 
 retriever = WikipediaRetriever( #←WikipediaRetrieverを初期化
     lang="ja", #←言語を日本語に設定
@@ -29,13 +28,9 @@ tools.append(
     )
 )
 
-agent = initialize_agent(
-    tools,
-    chat,
-    agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,  
-    verbose=True
-)
+agent = create_react_agent(chat,tools=tools)
 
-result = agent.run("スコッチウイスキーについてWikipediaで調べて概要を日本語でresult.txtというファイルに保存してください。")
+query = "スコッチウイスキーについてWikipediaで調べて概要を日本語でresult.txtというファイルに保存してください。"
+result = agent.invoke({"messages": ["human", query]})
 
-print(f"実行結果: {result}")
+print(f"実行結果: {result["messages"][-1].content}")

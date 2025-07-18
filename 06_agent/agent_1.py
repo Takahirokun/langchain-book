@@ -1,26 +1,19 @@
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
+from langchain_tavily import TavilySearch
 
 chat = ChatOpenAI(
     temperature=0,  #← temperatureを0に設定して出力の多様性を抑える
     model="gpt-3.5-turbo"
 )
 
-tools = load_tools(  #← LangChainに用意されているToolを読み込む
-    [
-        "requests",  #← 特定のURLの結果を取得できるToolであるrequestsを読み込む
-    ]
-)
+tavily_search_tool = TavilySearch(
+    max_results=5,
+    topic="general"
+)  #← TavilySearchを使用して最大5件の検索結果を取得するToolを作成
 
-agent = initialize_agent(  #← Agentを初期化する
-    tools=tools,  #← Agentが使用することができるToolの配列を設定
-    llm=chat,  #← Agentが使用する言語モデルを指定
-    agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,  #←ReAct方式で動作するように設定する
-    verbose=True  #← 実行途中のログを表示する
-)
+agent = create_react_agent(chat, [tavily_search_tool])  #← React Agentを作成
 
-result = agent.run("""以下のURLにアクセスして東京の天気を調べて日本語で答えてください。
-https://www.jma.go.jp/bosai/forecast/data/overview_forecast/130000.json
-""")
+result = agent.invoke({"messages": [("human", "今日の東京の天気を調べてください。")]})
 
-print(f"実行結果: {result}")
+print(f"実行結果: {result["messages"][-1].content}")
