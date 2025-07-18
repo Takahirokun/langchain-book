@@ -1,30 +1,29 @@
 import chainlit as cl
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
 
 chat = ChatOpenAI(
     temperature=0,  
     model="gpt-3.5-turbo"
 )
 
-tools = load_tools( 
-    [
-        "serpapi",
-    ]
-)
+tools = []
 
-agent = initialize_agent(tools=tools, llm=chat, agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+agent = create_react_agent(chat,tools=tools)
 
 @cl.on_chat_start
 async def on_chat_start():
     await cl.Message(content="Agentの初期化が完了しました").send() 
 
 @cl.on_message
-async def on_message(input_message):
-    result = agent.run( #← Agentを実行する
-        input_message, #← 入力メッセージ
-        callbacks=[ #← コールバックを指定
-            cl.LangchainCallbackHandler() #← chainlitに用意されているCallbacksを指定
-        ]
+async def on_message(input_message: cl.Message):
+    result = agent.invoke( #← Agentを実行する
+        {
+            "messages": 
+            [
+                ("user", input_message.content)
+            ]
+        },
+        config={"callbacks": [cl.LangchainCallbackHandler()]},
     )
-    await cl.Message(content=result).send()
+    await cl.Message(content=result["messages"][-1].content).send()

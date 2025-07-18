@@ -1,6 +1,6 @@
 from langchain.callbacks.base import BaseCallbackHandler #← BaseCallbackHandlerをインポート
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 
 class LogCallbackHandler(BaseCallbackHandler): #← Callbackを作成する
@@ -20,7 +20,7 @@ chat = ChatOpenAI(
     ]
 )
 
-result = chat([
+result = chat.invoke([
     HumanMessage(content="こんにちは！"),
 ])
 
